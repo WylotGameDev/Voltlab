@@ -58,6 +58,12 @@ body{background:#060605;color:#888870;font-family:'Courier New',Courier,monospac
 #helpbox kbd{background:#111110;border:1px solid #222218;padding:1px 5px;font-family:inherit;color:#888868;font-size:9px;}
 #helpclose{margin-top:18px;background:#141200;border:1px solid #d4a012;color:#d4a012;padding:7px 18px;cursor:pointer;font-family:inherit;font-size:10px;letter-spacing:.5px;text-transform:uppercase;width:100%;transition:background .12s;}
 #helpclose:hover{background:#201a00;}
+#wireColorWrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0 5px;}
+#wireColorWrap label{font-size:7px;color:#2e2e24;letter-spacing:.3px;text-transform:uppercase;}
+#wireColorPicker{width:30px;height:20px;border:1px solid #2a2a20;background:#0e0e0c;cursor:pointer;padding:1px;border-radius:0;}
+#wireColorPicker:hover{border-color:#c8920a;}
+#resetWireColor{font-size:7px;color:#2a2a20;background:none;border:none;cursor:pointer;font-family:inherit;letter-spacing:.2px;text-transform:uppercase;padding:0;}
+#resetWireColor:hover{color:#c8920a;}
 </style>
 </head>
 <body>
@@ -71,6 +77,12 @@ body{background:#060605;color:#888870;font-family:'Courier New',Courier,monospac
   <button class="tbtn" data-t="wrench"  onclick="setTool('wrench')"><span class="ticon">🔧</span>Wrench<span class="tkey">[5]</span></button>
   <button class="tbtn" data-t="finger"  onclick="setTool('finger')"><span class="ticon">☝</span>Touch<span class="tkey">[6]</span></button>
   <div class="sep"></div>
+  <div id="wireColorWrap">
+    <label>Wire Color</label>
+    <input type="color" id="wireColorPicker" value="#d48020" title="Custom wire color">
+    <button id="resetWireColor" onclick="resetWireColor()" title="Reset to type default">↺ auto</button>
+  </div>
+  <div class="sep"></div>
   <div class="hint"><span>R</span> rotate &nbsp;<span>W</span> wire<br><span>RMB</span> delete &nbsp;<span>?</span> help</div>
 </div>
 
@@ -81,6 +93,7 @@ body{background:#060605;color:#888870;font-family:'Courier New',Courier,monospac
   <div class="htitle">VOLTLAB v0.3</div>
   <div class="hrow"><span class="hk">Tool</span><span class="hv" id="hv-tool">Select</span></div>
   <div class="hrow"><span class="hk">Wire</span><span class="hv" id="hv-wire">Copper</span></div>
+  <div class="hrow"><span class="hk">Color</span><span class="hv" id="hv-wcolor">Auto</span></div>
   <div class="hrow"><span class="hk">Parts</span><span class="hv" id="hv-parts">0</span></div>
   <div class="hrow"><span class="hk">mA</span><span class="hv" id="hv-amps">—</span></div>
   <div class="hrow"><span class="hk">Temp</span><span class="hv" id="hv-temp">—</span></div>
@@ -118,9 +131,10 @@ body{background:#060605;color:#888870;font-family:'Courier New',Courier,monospac
     <h2>Wire Types</h2>
     <table>
       <tr><td><b style="color:#d48020">Copper</b></td><td>Standard — slight signal delay, reliable</td></tr>
+      <tr><td><b style="color:#8b8b8b">Steel</b></td><td>Less reliable yet cheap</td></tr>
       <tr><td><b style="color:#ffd700">Gold</b></td><td>Ultra-fast — max 0.15A only, burns out</td></tr>
       <tr><td><b style="color:#00ccff">Superconductor</b></td><td>Zero resistance, fast propagation</td></tr>
-      <tr><td><b style="color:#ff5500">Heat Pipe</b></td><td>Conducts current AND heat to nearby parts</td></tr>
+      <tr><td><b style="color:#ff5500">Heat Pipe</b></td><td>Conducts heat to nearby parts</td></tr>
       <tr><td><b style="color:#7a5030">Rope</b></td><td>Non-conductive, structural / decorative</td></tr>
     </table>
     <h2>Hazards</h2>
@@ -156,10 +170,11 @@ function w2s(wx,wy){return{x:wx+cam.x,y:wy+cam.y};}
 // ── WIRE TYPES ──────────────────────────────────────────────
 const WIRE_TYPES={
   copper:  {name:'Copper',        color:'#7a4a0e',active:'#d48020',r:.5,   lw:2.5,delay:160,maxI:Infinity},
-  gold:    {name:'Gold (Fast)',    color:'#7a6004',active:'#ffd700',r:3,    lw:2,  delay:5,  maxI:.15,fast:true},
-  supercon:{name:'Superconductor',color:'#003040',active:'#00ccff',r:.001, lw:3,  delay:25, maxI:Infinity},
-  heatpipe:{name:'Heat Pipe',     color:'#5a1600',active:'#ff5500',r:.15,  lw:4,  delay:0,  maxI:Infinity,heats:true},
-  rope:    {name:'Rope (Struct.)',color:'#4a2e10',active:'#4a2e10',r:1e9,  lw:4,  delay:0,  maxI:0,insulated:true},
+  steel:  {name:'Steel',        color:'#8b8b8b',active:'#ff5500',r:.35,   lw:1.5,delay:360,maxI:Infinity,heats:true},
+  gold:    {name:'Gold',    color:'#7a6004',active:'#ffd700',r:3,    lw:2,  delay:5,  maxI:.15,fast:true},
+  supercon:{name:'Superconductor',color:'#003040',active:'#00ccff',r:.001, lw:3,  delay:5, maxI:Infinity},
+  heatpipe:{name:'Heat Pipe',     color:'#5a1600',active:'#ff5500',r:.15,  lw:4,  delay:0,  maxI:Infinity,heats:true,insulated:true},
+  rope:    {name:'Rope',color:'#4a2e10',active:'#4a2e10',r:1e9,  lw:4,  delay:0,  maxI:0,insulated:true},
 };
 
 // ── PARTICLES ────────────────────────────────────────────────
@@ -291,6 +306,7 @@ const DEFS={
 
 // ── STATE ────────────────────────────────────────────────────
 let tool='select', spawnType=null, wireType='copper';
+let currentWireColor=null; // null = use wire type default
 let components=[], wires=[];
 let selected=null, dragging=null, dragOff={x:0,y:0};
 let wireStart=null;
@@ -359,7 +375,7 @@ class Component{
     if(d.wireless?.role==='rx') return this.st.wirelessSig&&this.st.powered;
     if(d.wireless?.role==='both') return this.st.wirelessSig&&this.st.powered;
     if(d.sensor) return this.st.sensorActive&&this.st.powered;
-    if(d.oscillates||d.timed||d.delayed) return this.st.logicOut;
+    if(d.oscillates||d.timed||d.delayed) return !this.st.burnt&&!this.st.exploded&&!this.st.blown;
     if(d.insulated) return false;
     if(d.junction) return true;
     return true;
@@ -388,6 +404,20 @@ class Component{
     } else {
       const fn='_draw_'+this.type;
       if(typeof this[fn]==='function') this[fn](); else this._drawGeneric();
+      // Heat glow overlay — realistic temperature color
+      if(this.st.heat>.08){
+        const h=this.st.heat;
+        const r=Math.min(255,Math.round(h*255));
+        const g=Math.max(0,Math.round(h>0.5?255*(1-h)*1.5:h*80));
+        const alpha=Math.min(.55,h*.6);
+        ctx.fillStyle=`rgba(${r},${g},0,${alpha})`;
+        ctx.fillRect(0,0,this.w,this.h);
+        // Shimmer at high heat
+        if(h>.6&&Math.random()<h*.25){
+          ctx.fillStyle=`rgba(255,${200-h*200|0},0,${Math.random()*.25})`;
+          ctx.fillRect(0,0,this.w,this.h);
+        }
+      }
     }
     this._drawTerms();
     ctx.restore();
@@ -592,15 +622,55 @@ class Component{
   _draw_nandgate(){this._drawLogicBase('NAND','#183830','#28c060');}
   _draw_norgate() {this._drawLogicBase('NOR', '#182838','#2070b0');}
   _draw_oscillator(){
-    const{w,h}=this,on=this.st.logicOut;this._box('#080806','#183848');
-    if(on){ctx.strokeStyle='#3898c0';ctx.lineWidth=1.5;ctx.beginPath();for(let i=0;i<12;i++){const t=i/11;ctx.lineTo(4+t*(w-8),h/2-5+(i%2===0?0:10));}ctx.stroke();}
-    ctx.fillStyle=on?'#3898c0':'#283848';ctx.font='7px monospace';ctx.textAlign='center';ctx.fillText('OSC',w/2,h-3);ctx.textAlign='left';
+    const{w,h}=this,on=this.st.logicOut,pwr=this.st.powered;this._box('#080806','#183848');
+    if(pwr){
+      // Animated square wave
+      const t=(Date.now()%1200)/1200;
+      ctx.strokeStyle=on?'#4ab8e0':'#1e5870';ctx.lineWidth=1.5;
+      ctx.beginPath();
+      const xs=6,xe=w-6,ys=h/2-6,yh=12;
+      const steps=8,sw=(xe-xs)/steps;
+      for(let i=0;i<steps;i++){
+        const xx=xs+i*sw;
+        const phase=((i/steps+t)%1);
+        const high=phase<.5;
+        if(i===0)ctx.moveTo(xx,high?ys:ys+yh);
+        ctx.lineTo(xx,high?ys:ys+yh);
+        ctx.lineTo(xx+sw,high?ys:ys+yh);
+      }
+      ctx.stroke();
+      if(on){ctx.shadowColor='#4ab8e0';ctx.shadowBlur=6;}
+    }
+    ctx.fillStyle=pwr?(on?'#4ab8e0':'#1e5870'):'#283848';ctx.font='7px monospace';ctx.textAlign='center';ctx.fillText('OSC',w/2,h-3);ctx.textAlign='left';
+    ctx.shadowBlur=0;
   }
-  _draw_timer(){this._box('#080806','#283848');this._label('555','#384858');}
+  _draw_timer(){
+    const{w,h}=this,pwr=this.st.powered,on=this.st.logicOut;
+    this._box('#080806','#283848');
+    if(pwr){
+      const period=120,cnt=(this.st._timerCount||0)%period;
+      const prog=cnt/period;
+      ctx.fillStyle='#151e26';ctx.fillRect(5,h-10,w-10,5);
+      ctx.fillStyle=on?'#5090c0':'#204060';ctx.fillRect(5,h-10,Math.round((w-10)*prog),5);
+      if(on){ctx.shadowColor='#5090c0';ctx.shadowBlur=5;}
+    }
+    ctx.fillStyle=pwr?(on?'#6ab0d8':'#385870'):'#384858';
+    ctx.font='bold 8px monospace';ctx.textAlign='center';ctx.fillText('555',w/2,h/2+1);ctx.textAlign='left';
+    ctx.shadowBlur=0;
+  }
   _draw_delay(){
-    const{w,h}=this,on=this.st.logicOut;this._box('#080806','#202838');
-    ctx.fillStyle=on?'#4060a0':'#303050';ctx.font='7px monospace';ctx.textAlign='center';ctx.fillText('DLY',w/2,h/2-2);
-    ctx.fillText('⏱',w/2,h/2+8);ctx.textAlign='left';
+    const{w,h}=this,pwr=this.st.powered,on=this.st.logicOut;this._box('#080806','#202838');
+    if(pwr){
+      // Show fill level (delay buffer)
+      const buf=this.st._delayBuf||[];
+      const fill=buf.filter(x=>x>.5).length/Math.max(1,buf.length);
+      ctx.fillStyle='#151820';ctx.fillRect(5,h-10,w-10,5);
+      ctx.fillStyle=on?'#4060a0':'#203050';ctx.fillRect(5,h-10,Math.round((w-10)*fill),5);
+      if(on){ctx.shadowColor='#4060a0';ctx.shadowBlur=5;}
+    }
+    ctx.fillStyle=pwr?(on?'#4060a0':'#303050'):'#303050';ctx.font='7px monospace';ctx.textAlign='center';ctx.fillText('DLY',w/2,h/2-2);
+    ctx.fillStyle=pwr?(on?'#6080c0':'#384068'):'#383850';ctx.fillText('⏱',w/2,h/2+8);ctx.textAlign='left';
+    ctx.shadowBlur=0;
   }
   _draw_flipflop(){
     const{w,h}=this,q=this.st.srQ;this._box('#080806','#202838');
@@ -756,12 +826,49 @@ class Component{
   // ── UPDATE ──────────────────────────────────────────────────
   update(){
     const d=DEFS[this.type];
-    this.st.heat=Math.max(0,this.st.heat-.003);
+    // Heat dissipation — radiates to nearby components
+    this.st.heat=Math.max(0,this.st.heat-.0025);
+    if(this.st.heat>.1){
+      for(const other of components){
+        if(other===this) continue;
+        const dx=other.x+other.w/2-(this.x+this.w/2);
+        const dy=other.y+other.h/2-(this.y+this.h/2);
+        const dist=Math.hypot(dx,dy);
+        if(dist<80){
+          const transfer=this.st.heat*.0004*(1-dist/80);
+          other.st.heat=Math.min(DEFS[other.type].maxHeat||1, other.st.heat+transfer);
+        }
+      }
+    }
     if(this.type==='motor'&&this.st.powered) this.st.spin=(this.st.spin+this.st.I*.5)%(Math.PI*2);
-    if(d.oscillates&&this.st.powered){this.st.phase=(this.st.phase||0)+.05;this.st.logicOut=Math.sin(this.st.phase*Math.PI*2)>0;}
+    // Oscillator: always oscillates when powered, fast square wave
+    if(d.oscillates){
+      if(this.st.powered){
+        this.st.phase=(this.st.phase||0)+.05;
+        this.st.logicOut=Math.sin(this.st.phase*Math.PI*2)>0;
+      } else { this.st.logicOut=false; }
+    }
+    // Timer 555: pulses periodically (every ~2s when powered)
+    if(d.timed){
+      if(this.st.powered){
+        this.st._timerCount=(this.st._timerCount||0)+1;
+        const period=120; // ~2s at 60fps
+        this.st.logicOut=((this.st._timerCount%period)<(period*.4));
+      } else { this.st.logicOut=false; this.st._timerCount=0; }
+    }
+    // Delay module: passes input after ~1s delay
+    if(d.delayed){
+      if(this.st.powered){
+        this.st._delayBuf=(this.st._delayBuf||[]);
+        this.st._delayBuf.push(this.st.I>.001?1:0);
+        if(this.st._delayBuf.length>60) this.st._delayBuf.shift();
+        this.st.logicOut=(this.st._delayBuf[0]||0)>.5;
+      } else { this.st.logicOut=false; this.st._delayBuf=[]; }
+    }
     if(this.type==='display7'&&this.st.powered){this.st._tick++;if(this.st._tick>90){this.st.dispVal=(this.st.dispVal+1)%10;this.st._tick=0;}}
     if(d.sensor&&this.st.powered){if(Math.random()<.002)this.st.sensorActive=!this.st.sensorActive;}
     if(this.st.powered&&this.type==='buzzer'&&Date.now()-lastBuzz>200){lastBuzz=Date.now();playBuzz();}
+    // Heat pipe heating (original)
     if(d.heats&&this.st.powered){
       for(const other of components){
         if(other===this) continue;
@@ -776,9 +883,10 @@ class Component{
 
 // ── WIRE CLASS ───────────────────────────────────────────────
 class Wire{
-  constructor(fC,fT,tC,tT,wt){
+  constructor(fC,fT,tC,tT,wt,customColor){
     this.id=uid++; this.fC=fC; this.fT=fT; this.tC=tC; this.tT=tT;
     this.wt=wt||'copper'; this.r=WIRE_TYPES[this.wt].r;
+    this.color=customColor||null; // null = use wire type default
     this.I=0; this.burnt=false;
     this.animProg=0;
     fC.terms[fT].wires.push(this.id);
@@ -786,6 +894,11 @@ class Wire{
   }
   fp(){return this.fC.tp(this.fT);}
   tp_end(){return this.tC.tp(this.tT);}
+  // Darken a hex color for inactive state
+  _dim(hex,factor=.35){
+    let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+    return`rgb(${r*factor|0},${g*factor|0},${b*factor|0})`;
+  }
   draw(){
     const f=this.fp(), t=this.tp_end(), wt=WIRE_TYPES[this.wt];
     const active=this.I>.0001&&!this.burnt;
@@ -799,8 +912,35 @@ class Wire{
       return;
     }
 
-    ctx.strokeStyle=active?wt.active:wt.color; ctx.lineWidth=wt.lw;
+    const activeColor=this.color||wt.active;
+    const restColor=this.color?this._dim(this.color):wt.color;
+
+    // Heat tint override: if wire is hot, shift colour toward orange/red
+    let drawActive=activeColor, drawRest=restColor;
+    if((this.heat||0)>.15){
+      const hf=Math.min(1,this.heat);
+      const hr=Math.min(255,(hf*255)|0);
+      const hg=Math.max(0,(100-hf*100)|0);
+      const heatColor=`rgb(${hr},${hg},0)`;
+      // Blend toward heat color
+      drawActive=heatColor; drawRest=heatColor;
+    }
+
+    // Glow pass for active wires
+    if(active){
+      ctx.save();
+      ctx.strokeStyle=drawActive;
+      ctx.lineWidth=wt.lw+4;
+      ctx.globalAlpha=.18;
+      ctx.shadowColor=drawActive;ctx.shadowBlur=10;
+      ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.quadraticCurveTo(mx,my,t.x,t.y);ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.strokeStyle=active?drawActive:drawRest; ctx.lineWidth=wt.lw;
+    if(active){ctx.shadowColor=drawActive;ctx.shadowBlur=4;}
     ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.quadraticCurveTo(mx,my,t.x,t.y);ctx.stroke();
+    ctx.shadowBlur=0;
 
     if(active){
       const delay=wt.delay||0;
@@ -808,11 +948,16 @@ class Wire{
       const tt=((Date.now()*speed)%900)/900;
       const px=(1-tt)*(1-tt)*f.x+2*(1-tt)*tt*mx+tt*tt*t.x;
       const py=(1-tt)*(1-tt)*f.y+2*(1-tt)*tt*my+tt*tt*t.y;
-      ctx.fillStyle='#fff'; ctx.shadowColor=wt.active; ctx.shadowBlur=5;
-      ctx.beginPath();ctx.arc(px,py,2.2,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+      ctx.fillStyle='#fff'; ctx.shadowColor=drawActive; ctx.shadowBlur=6;
+      ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
       if(wt.heats){
         if(Math.random()<.04) spawnSparks(px,py,1,'#ff5500');
       }
+    }
+    // Hot wire smoke
+    if((this.heat||0)>.55&&Math.random()<(this.heat-.5)*.05){
+      const sp=w2s((f.x+t.x)/2,(f.y+t.y)/2);
+      particles.push(new Particle(sp.x,sp.y,'smoke',{spread:1.5,rise:2,size:4+Math.random()*5,gravity:-0.025,drag:.99}));
     }
   }
 }
@@ -820,7 +965,7 @@ class Wire{
 // ── SIMULATION ───────────────────────────────────────────────
 function simulate(){
   for(const c of components){c.st.powered=false;c.st.I=0;c.st.Vd=0;}
-  for(const w of wires) w.I=0;
+  for(const w of wires){w.I=0; w.heat=Math.max(0,(w.heat||0)-.002);}
   activeCircuits=0; totalCurrent=0; maxHeat=0;
 
   evaluateLogic();
@@ -865,11 +1010,20 @@ function simulate(){
       if(wt.fast&&I>wt.maxI&&!w.burnt){
         w.burnt=true; spawnSparks(w.fp().x,w.fp().y,10,'#ffd700'); spawnSparks(w.tp_end().x,w.tp_end().y,10,'#ffd700');
       }
-      if(wt.heats&&I>.01){
-        const mid={x:(w.fp().x+w.tp_end().x)/2, y:(w.fp().y+w.tp_end().y)/2};
+      // Wire self-heating (resistance × I²)
+      w.heat=(w.heat||0)+I*I*wt.r*.0004;
+      w.heat=Math.min(1,w.heat);
+      // Heat conduction from hot wire to nearby components
+      if((wt.heats||w.heat>.1)&&I>.01){
+        const fp=w.fp(),tp=w.tp_end();
+        const mid={x:(fp.x+tp.x)/2, y:(fp.y+tp.y)/2};
         for(const c of components){
           const dx=c.x+c.w/2-mid.x, dy=c.y+c.h/2-mid.y;
-          if(Math.hypot(dx,dy)<50) c.st.heat=Math.min(1,c.st.heat+.001*I);
+          const dist=Math.hypot(dx,dy);
+          if(dist<50){
+            const heatAmt=wt.heats?(.002*I):(w.heat*.0005);
+            c.st.heat=Math.min(DEFS[c.type].maxHeat||1, c.st.heat+heatAmt*(1-dist/50));
+          }
         }
       }
     }
@@ -976,10 +1130,11 @@ function render(){
   if(wireStart&&tool==='wire'){
     const f=wireStart.comp.tp(wireStart.termIdx), to=s2w(mouse.x,mouse.y);
     const wt=WIRE_TYPES[wireType];
-    ctx.strokeStyle=wt.color; ctx.lineWidth=wt.lw; ctx.setLineDash([6,4]);
+    const previewColor=currentWireColor||wt.color;
+    ctx.strokeStyle=previewColor; ctx.lineWidth=wt.lw; ctx.setLineDash([6,4]);
     ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(to.x,to.y);ctx.stroke();
     ctx.setLineDash([]);
-    ctx.beginPath();ctx.arc(f.x,f.y,7,0,Math.PI*2);ctx.strokeStyle=wt.active;ctx.lineWidth=2;ctx.stroke();
+    ctx.beginPath();ctx.arc(f.x,f.y,7,0,Math.PI*2);ctx.strokeStyle=currentWireColor||wt.active;ctx.lineWidth=2;ctx.stroke();
   }
 
   // Components
@@ -1025,6 +1180,9 @@ function render(){
 function updateHUD(){
   document.getElementById('hv-tool').textContent=tool.charAt(0).toUpperCase()+tool.slice(1);
   document.getElementById('hv-wire').textContent=WIRE_TYPES[wireType].name;
+  const wcel=document.getElementById('hv-wcolor');
+  if(currentWireColor){wcel.textContent='Custom';wcel.style.color=currentWireColor;}
+  else{wcel.textContent='Auto';wcel.style.color='#808068';}
   document.getElementById('hv-parts').textContent=components.length;
   document.getElementById('hv-circ').textContent=activeCircuits;
   document.getElementById('hv-amps').textContent=totalCurrent>0?(totalCurrent*1000).toFixed(1)+' mA':'—';
@@ -1114,7 +1272,7 @@ canvas.addEventListener('mousedown',e=>{
       if(ti>=0){
         if(!wireStart){wireStart={comp:c,termIdx:ti};playBeep(600);}
         else if(wireStart.comp!==c||wireStart.termIdx!==ti){
-          wires.push(new Wire(wireStart.comp,wireStart.termIdx,c,ti,wireType));
+          wires.push(new Wire(wireStart.comp,wireStart.termIdx,c,ti,wireType,currentWireColor));
           wireStart=null;playClick();
         }
         break;
@@ -1223,23 +1381,20 @@ function delWire(wire){
 
 // ── STARTER SCENE ────────────────────────────────────────────
 function buildScene(){
-  const cx=Math.round(W/2), cy=Math.round(H/2);
-  const bat  = new Component('battery',   cx-260, cy-15);
-  const sw   = new Component('switch',    cx-155, cy-14);
-  const bulb = new Component('bulb',      cx-50,  cy-21);
-  const led  = new Component('led',       cx+70,  cy-14);
-  const res  = new Component('resistor',  cx-80,  cy+60);
-  const osc  = new Component('oscillator',cx+20,  cy+60);
-  components.push(bat,sw,bulb,led,res,osc);
-  wires.push(new Wire(bat,1, sw,0,  'copper'));
-  wires.push(new Wire(sw,1,  bulb,0,'copper'));
-  wires.push(new Wire(bulb,1,led,0, 'copper'));
-  wires.push(new Wire(led,1, res,0, 'copper'));
-  wires.push(new Wire(res,1, osc,0, 'copper'));
-  wires.push(new Wire(osc,1, bat,0, 'copper'));
 }
 
 buildPanel();
+// Wire color picker
+document.getElementById('wireColorPicker').addEventListener('input',e=>{
+  currentWireColor=e.target.value;
+  document.getElementById('resetWireColor').style.color='#c8920a';
+});
+function resetWireColor(){
+  currentWireColor=null;
+  document.getElementById('resetWireColor').style.color='#2a2a20';
+  const wt=WIRE_TYPES[wireType];
+  document.getElementById('wireColorPicker').value=wt.active.length===7?wt.active:'#d48020';
+}
 buildScene();
 loop();
 </script>
