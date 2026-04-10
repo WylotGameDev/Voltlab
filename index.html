@@ -2,23 +2,173 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Main Menu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #07090f;
+            color: #c8d0e8;
+            font-family: 'Rajdhani', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(1.6rem, 5vw, 3rem);
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            color: #fff;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .sub {
+            font-size: 12px;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: #3a4560;
+            margin-bottom: 52px;
+            text-align: center;
+        }
+
+        .games {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 520px;
+        }
+
+        a.card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            border: 1px solid #151c2e;
+            background: #0c1020;
+            border-radius: 4px;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        a.card:hover {
+            background: #10172a;
+            border-color: #00d4ff55;
+        }
+
+        a.card:hover .arrow { color: #00d4ff; }
+        a.card:hover .title { color: #fff; }
+
+        .card-left { display: flex; align-items: center; gap: 18px; }
+
+        .num {
+            font-family: 'Orbitron', monospace;
+            font-size: 10px;
+            color: #2a3450;
+            letter-spacing: 1px;
+            min-width: 20px;
+        }
+
+        .title {
+            font-family: 'Orbitron', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #c8d0e8;
+            transition: color 0.2s;
+        }
+
+        .arrow {
+            color: #2a3450;
+            font-size: 18px;
+            transition: color 0.2s, transform 0.2s;
+        }
+
+        a.card:hover .arrow { transform: translateX(4px); }
+
+        /* WIP card */
+        .card.wip {
+            border-style: dashed;
+            border-color: #151c2e;
+            background: #0a0d18;
+            cursor: default;
+        }
+
+        .card.wip .title { color: #2a3450; }
+        .card.wip .arrow { color: #1a2035; }
+        .card.wip:hover {
+            border-color: #1e2840;
+            background: #0a0d18;
+        }
+        .card.wip:hover .title { color: #2a3450; }
+        .card.wip:hover .arrow { color: #1a2035; transform: none; }
+
+        .wip-badge {
+            font-size: 9px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #2a3450;
+            font-family: 'Orbitron', monospace;
+        }
+    </style>
 </head>
 <body>
 
-    <h1>Choose a Page</h1>
+    <h1>Unlicensed Studios</h1>
+    <p class="sub">Select a title</p>
 
-    <button onclick="location.href='voltlab.html'">
-        VOLTLAB
-    </button>
+    <div class="games">
 
-    <button onclick="location.href='island_god.html'">
-        ISLE OF THE FORGOTTEN GODS
-    </button>
+        <a href="voltlab.html" class="card">
+            <div class="card-left">
+                <span class="num">01</span>
+                <span class="title">VOLTLAB</span>
+            </div>
+            <span class="arrow">→</span>
+        </a>
 
-    <button onclick="location.href='madness.html'">
-        MADNESS
-    </button>
+        <a href="island_god.html" class="card">
+            <div class="card-left">
+                <span class="num">02</span>
+                <span class="title">ISLE OF THE FORGOTTEN GODS</span>
+            </div>
+            <span class="arrow">→</span>
+        </a>
+
+        <a href="madness.html" class="card">
+            <div class="card-left">
+                <span class="num">03</span>
+                <span class="title">PROJECT: MADNESS</span>
+            </div>
+            <span class="arrow">→</span>
+        </a>
+
+        <div class="card wip">
+            <div class="card-left">
+                <span class="num">04</span>
+                <span class="title">UNKNOWN</span>
+            </div>
+            <span class="wip-badge">WIP</span>
+        </div>
+
+        <div class="card wip">
+            <div class="card-left">
+                <span class="num">05</span>
+                <span class="title">UNKNOWN</span>
+            </div>
+            <span class="wip-badge">WIP</span>
+        </div>
+
+    </div>
 
 </body>
 </html>
